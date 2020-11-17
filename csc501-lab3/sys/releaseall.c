@@ -70,9 +70,9 @@ void releaseLDForProc(int pid, int ld)
 	pptr->lock_id = -1;
 	pptr->waiting_on_type = -1;
 
-	if (nonempty(lptr->lqhead))
+	if (nonempty(lptr->q_head))
 	{
-		int prev = lptr->lqtail;
+		int prev = lptr->q_tail;
 		int writerProcExist = 0;
 		int readerProcHoldingLock = 0;
 		int wpid = 0;
@@ -80,7 +80,7 @@ void releaseLDForProc(int pid, int ld)
 		unsigned long tdf = 0;	
 		maxprio = q[q[prev].qprev].qkey;
 		
-		while (q[prev].qprev != lptr->lqhead)
+		while (q[prev].qprev != lptr->q_head)
 		{
 			prev = q[prev].qprev;
 			wptr = &proctab[prev];
@@ -95,9 +95,9 @@ void releaseLDForProc(int pid, int ld)
 		
 		if (writerProcExist == 0)
 		{
-			prev = lptr->lqtail;
+			prev = lptr->q_tail;
 			
-			while (q[prev].qprev != lptr->lqhead && q[prev].qprev < NPROC && q[prev].qprev > 0)
+			while (q[prev].qprev != lptr->q_head && q[prev].qprev < NPROC && q[prev].qprev > 0)
 			{	
 				prev = q[prev].qprev;
 				dequeue(prev);
@@ -116,7 +116,7 @@ void releaseLDForProc(int pid, int ld)
 		}
 		else if (writerProcExist == 1)
 		{
-			prev = lptr->lqtail;
+			prev = lptr->q_tail;
 			if (mptr->qkey == maxprio)
 			{
 				tdf = proctab[q[prev].qprev].wait_time - wptr->wait_time;
@@ -153,7 +153,7 @@ void releaseLDForProc(int pid, int ld)
 				}
 				else
 				{
-					prev = lptr->lqtail;
+					prev = lptr->q_tail;
 					while (q[prev].qprev != wpid)
 					{
 						prev = q[prev].qprev;
@@ -174,7 +174,7 @@ void releaseLDForProc(int pid, int ld)
 			}
 			else
 			{
-				prev = lptr->lqtail;
+				prev = lptr->q_tail;
 				while (q[prev].qprev != wpid)
 				{
 					prev = q[prev].qprev;

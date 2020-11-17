@@ -17,15 +17,15 @@
 #define WRITE 1
 
 struct	lentry	{		
-	char	lstate;		
-	int	lqhead;		
-	int	lqtail;		
+	char lstate;			
 	int	ltype;		
 	int	lprio;		
+	int	q_head;		
+	int	q_tail;	
 	int process_bitmap[NPROC]; 
 };
 extern	struct	lentry	locks[];
-extern	int	nextlock;
 extern unsigned long ctr1000;
+extern	int	lock_index;
 
 #endif

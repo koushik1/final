@@ -6,21 +6,21 @@
 #include <stdio.h>
 
 struct  lentry  locks[NLOCKS];
-int 	nextlock;		
+int 	lock_index;		
 
 void linit()
 {
 
     struct lentry *lptr;
     int i=0;
-    nextlock = NLOCKS - 1;
+    lock_index = 0;
 
     while(i < NLOCKS){
 
         lptr = &locks[i];
         lptr->lstate = LFREE;
-        lptr->lqhead = newqueue();
-        lptr->lqtail = 1 + lptr->lqhead;
+        lptr->q_head = newqueue();
+        lptr->q_tail = 1 + lptr->q_head;
 	    lptr->lprio  = -1;	
 		lptr->ltype = DELETED;
         int j=0;

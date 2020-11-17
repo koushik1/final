@@ -31,10 +31,10 @@ int ldelete (int ld)
 
 
 
-    int queue_head = nonempty(lptr->lqhead);
+    int queue_head = nonempty(lptr->q_head);
     if (queue_head)
     {
-        int pid = getfirst(lptr->lqhead);
+        int pid = getfirst(lptr->q_head);
         while (pid != EMPTY)
         {
              proctab[pid].lock_id = -1;

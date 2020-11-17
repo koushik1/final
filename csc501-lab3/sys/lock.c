@@ -89,7 +89,7 @@ int check_higher_priority_writer(int ld, int priority)
 	struct pentry *pptr;
 	lptr = &locks[ld];
 	int curr;
-    for(curr = q[lptr->lqhead].qnext; curr!=lptr->lqtail; curr = q[curr].qnext)
+    for(curr = q[lptr->q_head].qnext; curr!=lptr->q_tail; curr = q[curr].qnext)
     {
 		pptr = &proctab[curr];
 		if (pptr->waiting_on_type == WRITE && q[curr].qkey > priority)
@@ -109,7 +109,7 @@ int max_waiting_process_priority (int ld)
 
     int curr ;
     int max_priority = -1;
-    for(curr = q[lptr->lqhead].qnext; curr!=lptr->lqtail; curr = q[curr].qnext)
+    for(curr = q[lptr->q_head].qnext; curr!=lptr->q_tail; curr = q[curr].qnext)
     {
         pptr = &proctab[curr];
         int current_prio = -1;
@@ -137,7 +137,7 @@ int block_process(struct pentry *pptr,int lock_d,int priority,int type,int pid)
     pptr->wait_time = ctr1000; 
     pptr->waiting_on_type = type; 
 
-    insert(pid, lptr->lqhead, priority); 
+    insert(pid, lptr->q_head, priority); 
     lptr->lprio = max_waiting_process_priority(lock_d); 
     int current_prio = -1;
 

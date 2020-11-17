@@ -16,17 +16,17 @@ int lcreate()
     int i;
     for (i = 0; i < NLOCKS; i++)
     {
-        if (nextlock < 0)
+        if (lock_index == NLOCKS)
         {
-            nextlock = NLOCKS - 1;
+            lock_index = 0;
         }
-        lock_desc = nextlock;
+        lock_desc = lock_index;
+        lock_index = lock_index + 1;
 		if (locks[lock_desc].lstate==LFREE) {
 			locks[lock_desc].lstate = LUSED;
             restore(ps);
 			return(lock_desc);
 		}
-        nextlock = nextlock - 1;
 
     }
     restore(ps);
