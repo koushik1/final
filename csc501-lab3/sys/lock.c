@@ -38,22 +38,13 @@ int lock (int ld, int type, int priority)
 				
 		else if (type == READ)
 		{
-			int writerProcExist = 0;
-			int next = lptr->lqhead;
-			struct pentry *wptr;
-			
-			while (q[next].qnext != lptr->lqtail)
+			if (check_higher_priority_writer(ld,priority))
 			{
-				next = q[next].qnext;
-				wptr = &proctab[next];
-				if (wptr->wait_ltype == WRITE && q[next].qkey > priority)
-				{
-					writerProcExist = 1;
-					break;	
-				}	
+				restore(ps);
+				return block_process(pptr,ld,priority,type,currpid);
 			}
 			
-			if (writerProcExist == 0)
+			else
 			{
 				lptr->ltype = type;
 				lptr->lprio = getMaxPriorityInLockWQ(ld); 
@@ -66,11 +57,7 @@ int lock (int ld, int type, int priority)
 				rampUpProcPriority (ld,-1);	
 			}
 			
-			if (writerProcExist == 1)
-			{
-				restore(ps);
-				return block_process(pptr,ld,priority,type,currpid);
-			}
+
 		}			
 	}
 
@@ -97,6 +84,23 @@ int lock (int ld, int type, int priority)
 	return(OK); 
 }
 
+int check_higher_priority_writer(int ld, int priority)
+{
+	struct lentry *lptr;
+	struct pentry *pptr;
+	lptr = &locks[ld];
+	int curr;
+    for(curr = q[lptr->lqhead].qnext; curr!=lptr->lqtail; curr = q[curr].qnext)
+    {
+		pptr = &proctab[curr];
+		if (pptr->wait_ltype == WRITE && q[curr].qkey > priority)
+		{
+			return 1;
+		}	
+	}
+	return 0;
+
+}
 
 int getMaxPriorityInLockWQ (int ld)
 {
