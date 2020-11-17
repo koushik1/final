@@ -226,20 +226,3 @@ int getMaxWaitProcPrioForPI (int pid)
 		
 	return maxprio;
 }
-
-int checkProcessTransitivityForPI (int pid)
-{
-	int ld;
-	struct pentry *pptr;
-
-	pptr = &proctab[pid];
-	ld = pptr->wait_lockid;
-	if ((ld<0 || ld>=NLOCKS))
-	{
-		return -1;
-	}
-	else
-	{
-		return ld;
-	}			
-}	

@@ -33,8 +33,8 @@ SYSCALL chprio(int pid, int newprio)
 		pptr->pinh = 0;
 	}
 
-	ld = checkProcessTransitivityForPI(pid);
-	if (ld != -1)
+	ld = pptr->wait_lockid;
+	if ((ld >= 0 && ld < NLOCKS))
 	{
 		lptr = &locks[ld];
 		lptr->lprio = getMaxPriorityInLockWQ(ld);

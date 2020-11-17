@@ -45,10 +45,22 @@ SYSCALL kill(int pid)
 
 	for (ld = 0; ld < NLOCKS; ld++)
 	{
-		/* release all acquired locks */
 		if (pptr->bm_locks[ld] == 1) 
 		{
-			releaseLDForProc(pid,ld);
+			struct lentry *temp_lp;
+			struct pentry *temp_pp;
+			
+			temp_lp = &locks[ld];
+			temp_pp = &proctab[pid];
+
+			temp_pp->wait_lockid = -1;
+			temp_pp->wait_ltype = -1;
+			temp_pp->wait_time = 0;
+			temp_pp->plockret = DELETED;
+
+			temp_lp->lprio = getMaxPriorityInLockWQ(ld);	
+			rampUpProcPriority(ld,-1);
+			dequeue(pid);
 			reschflag = 1;
 		}
 	}
