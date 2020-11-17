@@ -5,19 +5,27 @@
 #include <lock.h>
 #include <stdio.h>
 
-int lock (int ldes1, int type, int priority)
+int lock (int ld, int type, int priority)
 {
 	STATWORD ps;
+	disable(ps);
 	struct lentry *lptr;
 	struct pentry *pptr;
-	disable(ps);
-	
-	if ((ldes1<0 || ldes1>=NLOCKS) || (lptr= &locks[ldes1])->lstate==LFREE) {
+	lptr= &locks[ld];
+	pptr = &proctab[currpid];
+
+	if ((ld<0 || ld>=NLOCKS)) 
+	{
+		restore(ps);
+		return(SYSERR);
+	}
+
+	if (lptr->lstate==LFREE) 
+	{
 		restore(ps);
 		return(SYSERR);
 	}
 	
-	pptr = &proctab[currpid];
 
 	if (lptr->ltype == DELETED)
 	{
@@ -25,7 +33,7 @@ int lock (int ldes1, int type, int priority)
 		lptr->lprio = -1;
 		lptr->lproc_list[currpid] = 1;
 
-		pptr->bm_locks[ldes1] = 1; 
+		pptr->bm_locks[ld] = 1; 
 		pptr->wait_lockid = -1; 
 		pptr->wait_pprio = priority; 
 		pptr->wait_ltype = -1; 	
@@ -36,7 +44,7 @@ int lock (int ldes1, int type, int priority)
 		if (type == WRITE)
 		{
 			restore(ps);
-			return block_process(pptr,ldes1,priority,type,currpid);
+			return block_process(pptr,ld,priority,type,currpid);
 		}		
 				
 		else if (type == READ)
@@ -59,20 +67,20 @@ int lock (int ldes1, int type, int priority)
 			if (writerProcExist == 0)
 			{
 				lptr->ltype = type;
-				lptr->lprio = getMaxPriorityInLockWQ(ldes1); 
+				lptr->lprio = getMaxPriorityInLockWQ(ld); 
 				lptr->lproc_list[currpid] = 1;
 
-				pptr->bm_locks[ldes1] = 1;
+				pptr->bm_locks[ld] = 1;
 				pptr->wait_lockid = -1; 
 				pptr->wait_pprio = priority; 
 				pptr->wait_ltype = -1; 
-				rampUpProcPriority (ldes1,-1);	
+				rampUpProcPriority (ld,-1);	
 			}
 			
 			if (writerProcExist == 1)
 			{
 				restore(ps);
-				return block_process(pptr,ldes1,priority,type,currpid);
+				return block_process(pptr,ld,priority,type,currpid);
 			}
 		}			
 	}
@@ -80,7 +88,7 @@ int lock (int ldes1, int type, int priority)
 	else if (lptr->ltype == WRITE)
 	{
 		restore(ps);
-		return block_process(pptr,ldes1,priority,type,currpid);
+		return block_process(pptr,ld,priority,type,currpid);
 		
 	}
 	
