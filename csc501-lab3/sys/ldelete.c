@@ -5,42 +5,61 @@
 #include <lock.h>
 #include <stdio.h>
 
-
-SYSCALL ldelete(int lockdescriptor)
+/*------------------------------------------------------------------------
+ * ldelete  --  delete a lock by releasing its table entry
+ *------------------------------------------------------------------------
+ */
+int ldelete (int ld)
 {
-	STATWORD ps;    
-	int	pid;
-	struct	lentry	*lptr;
-	int i;
 
+    STATWORD ps;    
 	disable(ps);
-	if ((lockdescriptor<0 || lockdescriptor>=NLOCKS) || locks[lockdescriptor].lstate==LFREE) {
-		restore(ps);
+
+    if (locks[ld].lstate==LFREE)
+    {
+        restore(ps);
 		return(SYSERR);
-	}
-	lptr = &locks[lockdescriptor];
-	lptr->lstate = LFREE;
+    }
+
+    if (ld < 0 || ld >= NLOCKS)
+    {
+        restore(ps);
+		return(SYSERR);
+    }
+
+    struct	lentry	*lptr = &locks[ld];
+    lptr->lstate = LFREE;
 	lptr->ltype = DELETED;
 	lptr->lprio = -1;
 
-	for (i=0;i<NPROC;i++)
-	{
-		if (lptr->lproc_list[i] == 1)
-		{
-			lptr->lproc_list[i] = 0;
-			proctab[i].bm_locks[lockdescriptor] = 0;
-		}
-	}	
-	
-	if (nonempty(lptr->lqhead)) {
-		while( (pid=getfirst(lptr->lqhead)) != EMPTY)
-		  {
-		    proctab[pid].plockret = DELETED;
-		    proctab[pid].wait_lockid = -1;	
-		    ready(pid,RESCHNO);
-		  }
-		resched();
-	}
-	restore(ps);
+
+
+    int queue_head = nonempty(lptr->lqhead);
+    if (queue_head)
+    {
+        int pid = getfirst(lptr->lqhead);
+        while (pid != EMPTY)
+        {
+             proctab[pid].wait_lockid = -1;
+             ready(pid,RESCHNO);
+
+        }
+        resched();
+    }
+    int i = 0;
+    for (i = 0; i < NPROC; i++)
+    {
+        if (lptr->lproc_list[i] == 1)
+        {
+            lptr->lproc_list[i] = 0;
+            proctab[i].bm_locks[ld] = 0;
+        }
+    }
+
+    restore(ps);
 	return(OK);
+
+
+
 }
+
