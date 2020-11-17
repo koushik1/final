@@ -15,7 +15,7 @@ int releaseall (int numlocks, long lks,...)
 	
 	int i;
 	int ld;
-        unsigned long *a; 
+    unsigned long *a; 
 	int flag = 0;
 	pptr = &proctab[currpid];
 	
@@ -33,8 +33,126 @@ int releaseall (int numlocks, long lks,...)
 			lptr = &locks[ld];
 			if (lptr->process_bitmap[currpid] == 1)
 			{
-				releaseLDForProc(currpid, ld);					
+				struct pentry *nptr;
+				struct pentry *wptr;
+				int readerProcHoldingLock = 1;
+				int maxprio = -1;
+				int i=0;
+
+				lptr->ltype = DELETED;
+				lptr->process_bitmap[currpid] = 0;
+				
+				pptr->lock_bitmap[ld] = 0;
+				pptr->lock_id = -1;
+				pptr->waiting_on_type = -1;
+				for (i = 0;i < NPROC;i++)
+				{
+					if (lptr->process_bitmap[i] == 1)
+					{
+						readerProcHoldingLock = 0;
+						break;
+					}
+				}
+
+				if (readerProcHoldingLock)
+				{
+					if (nonempty(lptr->q_head))
+					{
+						int prev = lptr->q_tail;
+						int writerProcExist = 0;
+						int wpid = 0;
+						struct qent *mptr;
+						unsigned long tdf = 0;	
+						maxprio = q[q[prev].qprev].qkey;
+						
+						while (q[prev].qprev != lptr->q_head)
+						{
+							prev = q[prev].qprev;
+							wptr = &proctab[prev];
+							if (wptr->waiting_on_type == WRITE)
+							{
+								writerProcExist = 1;
+								wpid = prev;
+								mptr = &q[wpid];
+								break;		
+							}	
+						}
+						
+						if (writerProcExist == 0)
+						{
+							prev = lptr->q_tail;
+							
+							while (q[prev].qprev != lptr->q_head && q[prev].qprev < NPROC && q[prev].qprev > 0)
+							{	
+								prev = q[prev].qprev;
+								dequeue(prev);
+								nptr = &proctab[prev];
+								assign_lock(lptr,nptr, prev, READ,ld);
+								ready(prev, RESCHNO);
+							}	
+						}
+						else if (writerProcExist == 1)
+						{
+							prev = lptr->q_tail;
+							if (mptr->qkey == maxprio)
+							{
+								tdf = proctab[q[prev].qprev].wait_time - wptr->wait_time;
+								if (tdf < 0)
+								{
+									tdf = (-1)*tdf; 
+								}
+								if (tdf < 1000) 
+								{
+									
+										dequeue(wpid);
+										nptr = &proctab[wpid];
+										assign_lock(lptr,nptr, wpid, WRITE,ld);
+										ready(wpid, RESCHNO);
+								}
+								else
+								{
+									prev = lptr->q_tail;
+									while (q[prev].qprev != wpid)
+									{
+										prev = q[prev].qprev;
+										dequeue(prev);
+
+										nptr = &proctab[prev];
+										assign_lock(lptr,nptr, prev, READ,ld);
+										ready(prev, RESCHNO);
+									}				
+								}
+							}
+							else
+							{
+								prev = lptr->q_tail;
+								while (q[prev].qprev != wpid)
+								{
+									prev = q[prev].qprev;
+									dequeue(prev);
+									nptr = &proctab[prev];
+									assign_lock(lptr,nptr, prev, READ,ld);
+									ready(prev, RESCHNO);
+								}
+							}
+						}
+								
+					}
+				}
+					
+				lptr->lprio = max_waiting_process_priority(ld);
+				maxprio = max_current_process_priority(currpid);
+				
+				if (maxprio > pptr->pprio)
+				{
+					pptr->pinh = maxprio;
+				}
+				else
+				{
+					pptr->pinh = 0; 
+				}			
 			}
+
 			else
 			{
 				flag = 1;
@@ -46,138 +164,6 @@ int releaseall (int numlocks, long lks,...)
 
 	restore(ps);
 	return flag == 0 ? OK : SYSERR;	
-}
-
-void releaseLDForProc(int pid, int ld)
-{
-	
-	struct lentry *lptr;
-	struct pentry *pptr;
-	struct pentry *nptr;
-	struct pentry *wptr;
-	int readerProcHoldingLock = 1;
-
-	int oltype = lptr->ltype;
-	int maxprio = -1;
-	int i=0;
-
-	lptr = &locks[ld];
-	pptr = &proctab[pid];
-
-	lptr->ltype = DELETED;
-	lptr->process_bitmap[pid] = 0;
-	
-	pptr->lock_bitmap[ld] = 0;
-	pptr->lock_id = -1;
-	pptr->waiting_on_type = -1;
-	for (i = 0;i < NPROC;i++)
-	{
-		if (lptr->process_bitmap[i] == 1)
-		{
-			readerProcHoldingLock = 0;
-			break;
-		}
-	}
-
-	if (readerProcHoldingLock)
-	{
-		if (nonempty(lptr->q_head))
-		{
-			int prev = lptr->q_tail;
-			int writerProcExist = 0;
-			int wpid = 0;
-			struct qent *mptr;
-			unsigned long tdf = 0;	
-			maxprio = q[q[prev].qprev].qkey;
-			
-			while (q[prev].qprev != lptr->q_head)
-			{
-				prev = q[prev].qprev;
-				wptr = &proctab[prev];
-				if (wptr->waiting_on_type == WRITE)
-				{
-					writerProcExist = 1;
-					wpid = prev;
-					mptr = &q[wpid];
-					break;		
-				}	
-			}
-			
-			if (writerProcExist == 0)
-			{
-				prev = lptr->q_tail;
-				
-				while (q[prev].qprev != lptr->q_head && q[prev].qprev < NPROC && q[prev].qprev > 0)
-				{	
-					prev = q[prev].qprev;
-					dequeue(prev);
-					nptr = &proctab[prev];
-					assign_lock(lptr,nptr, prev, READ,ld);
-					ready(prev, RESCHNO);
-				}	
-			}
-			else if (writerProcExist == 1)
-			{
-				prev = lptr->q_tail;
-				if (mptr->qkey == maxprio)
-				{
-					tdf = proctab[q[prev].qprev].wait_time - wptr->wait_time;
-					if (tdf < 0)
-					{
-						tdf = (-1)*tdf; 
-					}
-					if (tdf < 1000) 
-					{
-						
-							dequeue(wpid);
-							nptr = &proctab[wpid];
-							assign_lock(lptr,nptr, wpid, WRITE,ld);
-							ready(wpid, RESCHNO);
-					}
-					else
-					{
-						prev = lptr->q_tail;
-						while (q[prev].qprev != wpid)
-						{
-							prev = q[prev].qprev;
-							dequeue(prev);
-
-							nptr = &proctab[prev];
-							assign_lock(lptr,nptr, prev, READ,ld);
-							ready(prev, RESCHNO);
-						}				
-					}
-				}
-				else
-				{
-					prev = lptr->q_tail;
-					while (q[prev].qprev != wpid)
-					{
-						prev = q[prev].qprev;
-						dequeue(prev);
-						nptr = &proctab[prev];
-						assign_lock(lptr,nptr, prev, READ,ld);
-						ready(prev, RESCHNO);
-					}
-				}
-			}
-					
-		}
-	}
-		
-	lptr->lprio = max_waiting_process_priority(ld);
-	maxprio = max_current_process_priority(pid);
-	
-	if (maxprio > pptr->pprio)
-	{
-		pptr->pinh = maxprio;
-	}
-	else
-	{
-		pptr->pinh = 0; 
-	}
-	
-			
 }
 
 void assign_lock(struct lentry *lptr,struct pentry *pptr, int pid, int type,int ld)
