@@ -526,8 +526,8 @@ suspend.o: ../sys/suspend.c /usr/include/stdc-predef.h ../h/conf.h \
  ../h/kernel.h ../h/systypes.h ../h/mem.h ../h/proc.h ../h/q.h \
  ../h/stdio.h
 task1.o: ../sys/task1.c /usr/include/stdc-predef.h ../h/conf.h \
- ../h/kernel.h ../h/systypes.h ../h/mem.h ../h/proc.h ../h/lock.h \
- ../h/stdio.h
+ ../h/kernel.h ../h/systypes.h ../h/mem.h ../h/proc.h ../h/stdio.h \
+ ../h/lock.h
 unsleep.o: ../sys/unsleep.c /usr/include/stdc-predef.h ../h/conf.h \
  ../h/kernel.h ../h/systypes.h ../h/mem.h ../h/proc.h ../h/q.h \
  ../h/sleep.h ../h/stdio.h
