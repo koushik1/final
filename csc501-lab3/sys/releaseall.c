@@ -5,7 +5,7 @@
 #include <lock.h>
 #include <stdio.h>
 
-int releaseall (int numlocks, long lks,...)
+int releaseall (int numlocks, long args,...)
 {
 
 	STATWORD ps;
@@ -15,14 +15,14 @@ int releaseall (int numlocks, long lks,...)
 	
 	int i;
 	int ld;
-    unsigned long *a; 
+    unsigned long *lock; 
 	int flag = 0;
 	pptr = &proctab[currpid];
 	
-	a = (unsigned long *)(&lks);
+	lock = (unsigned long *)(&args);
 	for (i=0;i<numlocks;i++)
 	{
-		ld = *a++;
+		ld = *lock++;
 
 		if ((ld<0 || ld>=NLOCKS)) 
 		{
@@ -36,7 +36,6 @@ int releaseall (int numlocks, long lks,...)
 				struct pentry *nptr;
 				struct pentry *wptr;
 				int lock_current_held = 1;
-				int maxprio = -1;
 				int i=0;
 
 				lptr->ltype = DELETED;
@@ -61,8 +60,7 @@ int releaseall (int numlocks, long lks,...)
 						int prev = lptr->q_tail;
 						int writer_flag = 0;
 						int wpid = 0;
-						unsigned long tdf = 0;	
-						maxprio = q[q[prev].qprev].qkey;
+						unsigned long time_dif = 0;	
 						
 						while (q[prev].qprev != lptr->q_head)
 						{
@@ -80,14 +78,14 @@ int releaseall (int numlocks, long lks,...)
 						if (writer_flag)
 						{
 							prev = lptr->q_tail;
-							if (q[wpid].qkey == maxprio)
+							if (q[wpid].qkey == q[q[lptr->q_tail].qprev].qkey)
 							{
-								tdf = proctab[q[prev].qprev].wait_time - wptr->wait_time;
-								if (tdf < 0)
+								time_dif = proctab[q[prev].qprev].wait_time - wptr->wait_time;
+								if (time_dif < 0)
 								{
-									tdf = (-1)*tdf; 
+									time_dif = (-1)*time_dif; 
 								}
-								if (tdf < 1000) 
+								if (time_dif < 1000) 
 								{
 									
 										dequeue(wpid);
@@ -102,7 +100,6 @@ int releaseall (int numlocks, long lks,...)
 									{
 										prev = q[prev].qprev;
 										dequeue(prev);
-
 										nptr = &proctab[prev];
 										assign_lock(lptr,nptr, prev, READ,ld);
 										ready(prev, RESCHNO);
@@ -140,11 +137,11 @@ int releaseall (int numlocks, long lks,...)
 				}
 					
 				lptr->lprio = max_waiting_process_priority(ld);
-				maxprio = max_current_process_priority(currpid);
+				int max_priority = max_current_process_priority(currpid);
 				
-				if (maxprio > pptr->pprio)
+				if (max_priority > pptr->pprio)
 				{
-					pptr->pinh = maxprio;
+					pptr->pinh = max_priority;
 				}
 				else
 				{
