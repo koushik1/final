@@ -48,13 +48,13 @@ int lock (int ld, int type, int priority)
 
 			{
 				lptr->ltype = type;
-				lptr->lprio = getMaxPriorityInLockWQ(ld); 
-				lptr->lproc_list[currpid] = 1;
+				lptr->lprio = max_waiting_process_priority(ld); 
+				lptr->process_bitmap[currpid] = 1;
 
-				pptr->bm_locks[ld] = 1;
+				pptr->lock_bitmap[ld] = 1;
 				pptr->lock_id = -1; 
-				pptr->wait_ltype = -1; 
-				rampUpProcPriority (ld,-1);	
+				pptr->waiting_on_type = -1; 
+				update_process_priority (ld,-1);	
 			}
 			
 
@@ -72,11 +72,11 @@ int lock (int ld, int type, int priority)
 	{
 		lptr->ltype = type;
 		lptr->lprio = -1;
-		lptr->lproc_list[currpid] = 1;
+		lptr->process_bitmap[currpid] = 1;
 
-		pptr->bm_locks[ld] = 1; 
+		pptr->lock_bitmap[ld] = 1; 
 		pptr->lock_id = -1; 
-		pptr->wait_ltype = -1; 	
+		pptr->waiting_on_type = -1; 	
 	}
 	
 	restore(ps);
@@ -92,7 +92,7 @@ int check_higher_priority_writer(int ld, int priority)
     for(curr = q[lptr->lqhead].qnext; curr!=lptr->lqtail; curr = q[curr].qnext)
     {
 		pptr = &proctab[curr];
-		if (pptr->wait_ltype == WRITE && q[curr].qkey > priority)
+		if (pptr->waiting_on_type == WRITE && q[curr].qkey > priority)
 		{
 			return 1;
 		}	
@@ -101,7 +101,7 @@ int check_higher_priority_writer(int ld, int priority)
 
 }
 
-int getMaxPriorityInLockWQ (int ld)
+int max_waiting_process_priority (int ld)
 {
     struct lentry *lptr;
     lptr = &locks[ld];
@@ -135,10 +135,10 @@ int block_process(struct pentry *pptr,int lock_d,int priority,int type,int pid)
     pptr->pstate = PRWAIT;
     pptr->lock_id = lock_d;  
     pptr->wait_time = ctr1000; 
-    pptr->wait_ltype = type; 
+    pptr->waiting_on_type = type; 
 
     insert(pid, lptr->lqhead, priority); 
-    lptr->lprio = getMaxPriorityInLockWQ(lock_d); 
+    lptr->lprio = max_waiting_process_priority(lock_d); 
     int current_prio = -1;
 
     if (pptr->pinh == 0)
@@ -146,12 +146,12 @@ int block_process(struct pentry *pptr,int lock_d,int priority,int type,int pid)
     else
         current_prio =  pptr->pinh;
 
-    rampUpProcPriority(lock_d,current_prio); 		 
+    update_process_priority(lock_d,current_prio); 		 
     resched();
     return OK;	
 }
 
-void rampUpProcPriority (int ld, int priority)
+void update_process_priority (int ld, int priority)
 {
 	struct lentry *lptr;
 	struct pentry *pptr;
@@ -161,7 +161,7 @@ void rampUpProcPriority (int ld, int priority)
 
 	for (i=0;i<NPROC;i++)
 	{
-		if (lptr->lproc_list[i] == 1)
+		if (lptr->process_bitmap[i] == 1)
 		{
 			pptr = &proctab[i];
 			int current_prio = -1;
@@ -172,7 +172,7 @@ void rampUpProcPriority (int ld, int priority)
 
 			if (priority == -1)
 			{
-				int max_p = getMaxWaitProcPrioForPI(i);
+				int max_p = max_current_process_priority(i);
 				
 				if (max_p > pptr->pprio)
 					pptr->pinh = max_p;
@@ -182,7 +182,7 @@ void rampUpProcPriority (int ld, int priority)
 				tmpld = proctab[i].lock_id;
 				if ((tmpld >= 0 && tmpld < NLOCKS))
 				{
-					rampUpProcPriority (tmpld,-1);
+					update_process_priority (tmpld,-1);
 				}			 
 			}
 			
@@ -192,7 +192,7 @@ void rampUpProcPriority (int ld, int priority)
 				tmpld = proctab[i].lock_id;
 				if ((tmpld >= 0 && tmpld < NLOCKS))
 				{
-					rampUpProcPriority (tmpld,-1);
+					update_process_priority (tmpld,-1);
 				}			 
 			}	
 		}
@@ -200,7 +200,7 @@ void rampUpProcPriority (int ld, int priority)
 
 }
 
-int getMaxWaitProcPrioForPI (int pid)
+int max_current_process_priority (int pid)
 {
 	int i;
 	int maxprio = -1;
@@ -211,7 +211,7 @@ int getMaxWaitProcPrioForPI (int pid)
 	
 	for (i=0;i<NLOCKS;i++)
 	{
-		if (pptr->bm_locks[i] == 1)
+		if (pptr->lock_bitmap[i] == 1)
 		{
 			lptr = &locks[i];
 			if (maxprio < lptr->lprio)

@@ -64,12 +64,11 @@ struct	pentry	{
 	int	fildes[_NFILE];		/* file - device translation	*/
 	int	ppagedev;		/* pageing dgram device		*/
 	int	pwaitret;
-
-	int 	pinh; 	
-	int	bm_locks[NLOCKS]; 
-	int 	lock_id;	
+	int pinh; 	
+	int	lock_bitmap[NLOCKS]; 
+	int lock_id;	
 	unsigned long wait_time; 
-	int 	wait_ltype;
+	int waiting_on_type;
 };
 
 

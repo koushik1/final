@@ -100,11 +100,11 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 	pptr->pinh = 0;
 	for (i=0;i<NLOCKS;i++)
 	{
-		pptr->bm_locks[i] = 0;
+		pptr->lock_bitmap[i] = 0;
 	}
 	pptr->lock_id = -1;
 	pptr->wait_time = 0;
-	pptr->wait_ltype = -1;
+	pptr->waiting_on_type = -1;
 
 	restore(ps);
 	return(pid);

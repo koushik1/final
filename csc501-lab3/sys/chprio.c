@@ -37,8 +37,8 @@ SYSCALL chprio(int pid, int newprio)
 	if ((ld >= 0 && ld < NLOCKS))
 	{
 		lptr = &locks[ld];
-		lptr->lprio = getMaxPriorityInLockWQ(ld);
-		rampUpProcPriority(ld,-1);	
+		lptr->lprio = max_waiting_process_priority(ld);
+		update_process_priority(ld,-1);	
 	} 
 	restore(ps);
 	return(newprio);

@@ -31,7 +31,7 @@ int releaseall (int numlocks, long lks,...)
 		else
 		{
 			lptr = &locks[ld];
-			if (lptr->lproc_list[currpid] == 1)
+			if (lptr->process_bitmap[currpid] == 1)
 			{
 				releaseLDForProc(currpid, ld);					
 			}
@@ -64,11 +64,11 @@ void releaseLDForProc(int pid, int ld)
 	pptr = &proctab[pid];
 
 	lptr->ltype = DELETED;
-	lptr->lproc_list[pid] = 0;
+	lptr->process_bitmap[pid] = 0;
 	
-	pptr->bm_locks[ld] = 0;
+	pptr->lock_bitmap[ld] = 0;
 	pptr->lock_id = -1;
-	pptr->wait_ltype = -1;
+	pptr->waiting_on_type = -1;
 
 	if (nonempty(lptr->lqhead))
 	{
@@ -84,7 +84,7 @@ void releaseLDForProc(int pid, int ld)
 		{
 			prev = q[prev].qprev;
 			wptr = &proctab[prev];
-			if (wptr->wait_ltype == WRITE)
+			if (wptr->waiting_on_type == WRITE)
 			{
 				writerProcExist = 1;
 				wpid = prev;
@@ -103,13 +103,13 @@ void releaseLDForProc(int pid, int ld)
 				dequeue(prev);
 
 				nptr = &proctab[prev];
-				nptr->bm_locks[ld] = 1;
+				nptr->lock_bitmap[ld] = 1;
 
  				lptr->ltype = READ;
-				lptr->lproc_list[prev] = 1;
+				lptr->process_bitmap[prev] = 1;
 				nptr->wait_time = 0;
 				nptr->lock_id = -1;
-				nptr->wait_ltype = -1;
+				nptr->waiting_on_type = -1;
 
 				ready(prev, RESCHNO);
 			}	
@@ -128,7 +128,7 @@ void releaseLDForProc(int pid, int ld)
 				{
 					for (i = 0;i < NPROC;i++)
 					{
-						if (lptr->lproc_list[i] == 1)
+						if (lptr->process_bitmap[i] == 1)
 						{
 							readerProcHoldingLock = 1;
 							break;
@@ -140,13 +140,13 @@ void releaseLDForProc(int pid, int ld)
 						dequeue(wpid);
 	
 						nptr = &proctab[wpid];
-						nptr->bm_locks[ld] = 1;
+						nptr->lock_bitmap[ld] = 1;
 	
  						lptr->ltype = WRITE;
-						lptr->lproc_list[wpid] = 1;
+						lptr->process_bitmap[wpid] = 1;
 						nptr->wait_time = 0;
 						nptr->lock_id = -1;
-						nptr->wait_ltype = -1;
+						nptr->waiting_on_type = -1;
 
 						ready(wpid, RESCHNO);
 					}
@@ -160,13 +160,13 @@ void releaseLDForProc(int pid, int ld)
 						dequeue(prev);
 
 						nptr = &proctab[prev];
-						nptr->bm_locks[ld] = 1;
+						nptr->lock_bitmap[ld] = 1;
 
  						lptr->ltype = READ;
-						lptr->lproc_list[prev] = 1;
+						lptr->process_bitmap[prev] = 1;
 						nptr->wait_time = 0;
 						nptr->lock_id = -1;
-						nptr->wait_ltype = -1;
+						nptr->waiting_on_type = -1;
 
 						ready(prev, RESCHNO);
 					}				
@@ -181,13 +181,13 @@ void releaseLDForProc(int pid, int ld)
 					dequeue(prev);
 
 					nptr = &proctab[prev];
-					nptr->bm_locks[ld] = 1;
+					nptr->lock_bitmap[ld] = 1;
 
  					lptr->ltype = READ;
-					lptr->lproc_list[prev] = 1;
+					lptr->process_bitmap[prev] = 1;
 					nptr->wait_time = 0;
 					nptr->lock_id = -1;
-					nptr->wait_ltype = -1;
+					nptr->waiting_on_type = -1;
 
 					ready(prev, RESCHNO);
 				}
@@ -196,8 +196,8 @@ void releaseLDForProc(int pid, int ld)
 				
 	}
 		
-	lptr->lprio = getMaxPriorityInLockWQ(ld);
-	maxprio = getMaxWaitProcPrioForPI(pid);
+	lptr->lprio = max_waiting_process_priority(ld);
+	maxprio = max_current_process_priority(pid);
 	
 	if (maxprio > pptr->pprio)
 	{

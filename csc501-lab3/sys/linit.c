@@ -26,7 +26,7 @@ void linit()
         int j=0;
         while(j<NPROC)
         {
-            lptr->lproc_list[j] = 0;
+            lptr->process_bitmap[j] = 0;
             j++;
         }
         i++;

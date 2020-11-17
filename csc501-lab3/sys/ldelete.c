@@ -46,10 +46,10 @@ int ldelete (int ld)
     int i = 0;
     for (i = 0; i < NPROC; i++)
     {
-        if (lptr->lproc_list[i] == 1)
+        if (lptr->process_bitmap[i] == 1)
         {
-            lptr->lproc_list[i] = 0;
-            proctab[i].bm_locks[ld] = 0;
+            lptr->process_bitmap[i] = 0;
+            proctab[i].lock_bitmap[ld] = 0;
         }
     }
 

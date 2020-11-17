@@ -43,7 +43,7 @@ SYSCALL kill(int pid)
 	freestk(pptr->pbase, pptr->pstklen);
 
 	for (ld = 0; ld < NLOCKS; ld++)
-	{		if (pptr->bm_locks[ld] == 1) 
+	{		if (pptr->lock_bitmap[ld] == 1) 
 		{
 			struct lentry *temp_lptr;
 			
@@ -52,11 +52,11 @@ SYSCALL kill(int pid)
 
 			dequeue(pid);
 			pptr->lock_id = -1;
-			pptr->wait_ltype = -1;
+			pptr->waiting_on_type = -1;
 			pptr->wait_time = 0;
 
-			temp_lptr->lprio = getMaxPriorityInLockWQ(ld);	
-			rampUpProcPriority(ld,-1);
+			temp_lptr->lprio = max_waiting_process_priority(ld);	
+			update_process_priority(ld,-1);
 			reschflag = 1;
 		}
 	}
@@ -78,11 +78,11 @@ SYSCALL kill(int pid)
 
 				dequeue(pid);
 				pptr->lock_id = -1;
-				pptr->wait_ltype = -1;
+				pptr->waiting_on_type = -1;
 				pptr->wait_time = 0;
 
-				temp_lptr->lprio = getMaxPriorityInLockWQ(ld);	
-				rampUpProcPriority(ld,-1);
+				temp_lptr->lprio = max_waiting_process_priority(ld);	
+				update_process_priority(ld,-1);
 			}
 
 	case PRREADY:	dequeue(pid);
