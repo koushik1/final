@@ -211,20 +211,3 @@ void releaseLDForProc(int pid, int ld)
 			
 }
 
-void releaseLDForWaitProc(pid, ld)
-{
-	struct lentry *lptr;
-	struct pentry *pptr;
-	
-	lptr = &locks[ld];
-	pptr = &proctab[pid];
-
-	dequeue(pid);
-	pptr->wait_lockid = -1;
-	pptr->wait_ltype = -1;
-	pptr->wait_time = 0;
-	pptr->plockret = DELETED;
-
-	lptr->lprio = getMaxPriorityInLockWQ(ld);	
-	rampUpProcPriority(ld,-1);
-}
