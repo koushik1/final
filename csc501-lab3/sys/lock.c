@@ -45,6 +45,7 @@ int lock (int ld, int type, int priority)
 			}
 			
 			else
+
 			{
 				lptr->ltype = type;
 				lptr->lprio = getMaxPriorityInLockWQ(ld); 
@@ -159,8 +160,6 @@ void rampUpProcPriority (int ld, int priority)
 	struct pentry *pptr;
 	int i;
 	int tmpld;
-	int gprio = -1;
-	int maxprio = -1;				
 	lptr = &locks[ld];
 
 	for (i=0;i<NPROC;i++)
@@ -168,38 +167,33 @@ void rampUpProcPriority (int ld, int priority)
 		if (lptr->lproc_list[i] == 1)
 		{
 			pptr = &proctab[i];
+			int current_prio = -1;
 			if (pptr->pinh == 0)
-				gprio =  pptr->pprio;
+				current_prio =  pptr->pprio;
 			else
-				gprio =  pptr->pinh;
-			
-		 	
+				current_prio =  pptr->pinh;
+
 			if (priority == -1)
 			{
-				maxprio = getMaxWaitProcPrioForPI(i);
+				int max_p = getMaxWaitProcPrioForPI(i);
 				
-				
-				if (maxprio > pptr->pprio)
-				{
-					pptr->pinh = maxprio;
-				}
+				if (max_p > pptr->pprio)
+					pptr->pinh = max_p;
 				else
-				{
 					pptr->pinh = 0; 
-				}
 				
-				tmpld = checkProcessTransitivityForPI(i);
-				if (tmpld != -1)
+				tmpld = proctab[i].wait_lockid;
+				if ((tmpld >= 0 && tmpld < NLOCKS))
 				{
 					rampUpProcPriority (tmpld,-1);
 				}			 
 			}
 			
-			else if (gprio < priority)
+			else if (current_prio < priority)
 			{
 				pptr->pinh = priority;
-				tmpld = checkProcessTransitivityForPI(i);
-				if (tmpld != -1)
+				tmpld = proctab[i].wait_lockid;
+				if ((tmpld >= 0 && tmpld < NLOCKS))
 				{
 					rampUpProcPriority (tmpld,-1);
 				}			 
