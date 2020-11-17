@@ -35,20 +35,8 @@ int lock (int ldes1, int type, int priority)
 	{
 		if (type == WRITE)
 		{
-			pptr->pstate = PRWAIT;
-			pptr->wait_lockid = ldes1;   
-			pptr->wait_time = ctr1000;   
-			pptr->wait_pprio = priority;
-			pptr->wait_ltype = type; 
-
-			insert(currpid, lptr->lqhead, priority); 
-			lptr->lprio = getMaxPriorityInLockWQ(ldes1); 
-			rampUpProcPriority(ldes1,getProcessPriority(pptr));
-
-			pptr->plockret = OK;
-			resched();
 			restore(ps);
-			return pptr->plockret;
+			return block_process(pptr,ldes1,priority,type,currpid)
 		}		
 				
 		else if (type == READ)
@@ -83,40 +71,16 @@ int lock (int ldes1, int type, int priority)
 			
 			if (writerProcExist == 1)
 			{
-				pptr->pstate = PRWAIT;
-				pptr->wait_lockid = ldes1;   
-				pptr->wait_time = ctr1000;   
-				pptr->wait_pprio = priority;
-				pptr->wait_ltype = type; 
-
-				insert(currpid, lptr->lqhead, priority); 
-				lptr->lprio = getMaxPriorityInLockWQ(ldes1); 
-				rampUpProcPriority(ldes1,getProcessPriority(pptr)); 		 
-				
-				pptr->plockret = OK;
-				resched();
 				restore(ps);
-				return pptr->plockret;	
+				return block_process(pptr,ldes1,priority,type,currpid)	
 			}
 		}			
 	}
 
 	else if (lptr->ltype == WRITE)
 	{
-		pptr->pstate = PRWAIT;
-		pptr->wait_lockid = ldes1;   
-		pptr->wait_time = ctr1000;   
-		pptr->wait_pprio = priority; 
-		pptr->wait_ltype = type; 
-
-		insert(currpid, lptr->lqhead, priority); 
-		lptr->lprio = getMaxPriorityInLockWQ(ldes1);
-		rampUpProcPriority(ldes1,getProcessPriority(pptr)); 
-		
-		pptr->plockret = OK;
-		resched();
 		restore(ps);
-		return pptr->plockret;
+		return block_process(pptr,ldes1,priority,type,currpid)
 		
 	}
 	
@@ -147,6 +111,30 @@ int getMaxPriorityInLockWQ (int ld)
 	}
 
 	return lprio;				
+}
+
+int block_process(struct pentry *pptr,int lock_d,int priority,int type,int pid)
+{
+    struct lentry *lptr;
+    lptr= &locks[lock_d];
+    pptr->pstate = PRWAIT;
+    pptr->wait_lockid = lock_d;  
+    pptr->wait_time = ctr1000; 
+	pptr->wait_pprio = priority;  
+    pptr->wait_ltype = type; 
+
+    insert(pid, lptr->lqhead, priority); 
+    lptr->lprio = getMaxPriorityInLockWQ(lock_d); 
+    int current_prio = -1;
+
+    if (pptr->pinh == 0)
+        current_prio =  pptr->pprio;
+    else
+        current_prio =  pptr->pinh;
+
+    rampUpProcPriority(lock_d,current_prio); 		 
+    resched();
+    return OK;	
 }
 
 void rampUpProcPriority (int ld, int priority)
