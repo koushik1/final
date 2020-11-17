@@ -10,32 +10,27 @@ LOCAL int newlock();
 int lcreate()
 {
 	STATWORD ps;    
-	int	ld;
-
 	disable(ps);
-	if ((ld=newlock())==SYSERR) {
-		restore(ps);
-		return(SYSERR);
-	}
-	
-	restore(ps);
-	return(ld);
-}
 
-
-LOCAL int newlock()
-{
-	int	ld;
-	int	i;
-
-	for (i=0 ; i<NLOCKS ; i++) {
-		ld=nextlock--;
-		if (ld < 0)
-			nextlock = NLOCKS-1;
-		if (locks[ld].lstate==LFREE) {
-			locks[ld].lstate = LUSED;
-			return(ld);
+	int	lock_desc;
+    int i;
+    for (i = 0; i < NLOCKS; i++)
+    {
+        if (nextlock < 0)
+        {
+            nextlock = NLOCKS - 1;
+        }
+        lock_desc = nextlock;
+		if (locks[lock_desc].lstate==LFREE) {
+			locks[lock_desc].lstate = LUSED;
+            restore(ps);
+			return(lock_desc);
 		}
-	}
-	return(SYSERR);
+        nextlock = nextlock - 1;
+
+    }
+    restore(ps);
+    return(SYSERR);
 }
+
+
