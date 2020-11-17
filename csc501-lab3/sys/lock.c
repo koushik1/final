@@ -102,8 +102,13 @@ int getMaxPriorityInLockWQ (int ld)
 	{
 		next = q[next].qnext;
 		pptr = &proctab[next];
-		
-		gprio = getProcessPriority(pptr); 
+
+		if (pptr->pinh == 0)
+			gprio =  pptr->pprio;
+		else
+			gprio =  pptr->pinh;
+
+
 		if (lprio < gprio)
 		{
 			lprio = gprio;
@@ -152,7 +157,10 @@ void rampUpProcPriority (int ld, int priority)
 		if (lptr->lproc_list[i] == 1)
 		{
 			pptr = &proctab[i];
-			gprio = getProcessPriority(pptr);
+			if (pptr->pinh == 0)
+				gprio =  pptr->pprio;
+			else
+				gprio =  pptr->pinh;
 			
 		 	
 			if (priority == -1)
@@ -230,17 +238,3 @@ int checkProcessTransitivityForPI (int pid)
 		return ld;
 	}			
 }	
-
-int getProcessPriority(struct pentry *pptr)
-{
-
-	if (pptr->pinh == 0)
-	{
-		return pptr->pprio;
-	}
-	else
-	{
-		return pptr->pinh;
-	}
-
-}
