@@ -36,7 +36,7 @@ int lock (int ldes1, int type, int priority)
 		if (type == WRITE)
 		{
 			restore(ps);
-			return block_process(pptr,ldes1,priority,type,currpid)
+			return block_process(pptr,ldes1,priority,type,currpid);
 		}		
 				
 		else if (type == READ)
@@ -72,7 +72,7 @@ int lock (int ldes1, int type, int priority)
 			if (writerProcExist == 1)
 			{
 				restore(ps);
-				return block_process(pptr,ldes1,priority,type,currpid)	
+				return block_process(pptr,ldes1,priority,type,currpid);
 			}
 		}			
 	}
@@ -80,7 +80,7 @@ int lock (int ldes1, int type, int priority)
 	else if (lptr->ltype == WRITE)
 	{
 		restore(ps);
-		return block_process(pptr,ldes1,priority,type,currpid)
+		return block_process(pptr,ldes1,priority,type,currpid);
 		
 	}
 	
