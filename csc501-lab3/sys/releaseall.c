@@ -33,8 +33,6 @@ int releaseall (int numlocks, long args,...)
 			lptr = &locks[ld];
 			if (lptr->process_bitmap[currpid] == 1)
 			{
-				struct pentry *nptr;
-				struct pentry *wptr;
 				int lock_current_held = 1;
 				int i=0;
 
@@ -60,13 +58,15 @@ int releaseall (int numlocks, long args,...)
 						int prev = lptr->q_tail;
 						int writer_flag = 0;
 						int wpid = 0;
-						unsigned long time_dif = 0;	
+
+						struct pentry *temp_pointer;
+						struct pentry *max_write_pointer;
 						
 						while (q[prev].qprev != lptr->q_head)
 						{
 							prev = q[prev].qprev;
-							wptr = &proctab[prev];
-							if (wptr->waiting_on_type == WRITE)
+							max_write_pointer = &proctab[prev];
+							if (max_write_pointer->waiting_on_type == WRITE)
 							{
 								writer_flag = 1;
 								wpid = prev;
@@ -80,17 +80,17 @@ int releaseall (int numlocks, long args,...)
 							prev = lptr->q_tail;
 							if (q[wpid].qkey == q[q[lptr->q_tail].qprev].qkey)
 							{
-								time_dif = proctab[q[prev].qprev].wait_time - wptr->wait_time;
-								if (time_dif < 0)
-								{
-									time_dif = (-1)*time_dif; 
-								}
+								unsigned long time_dif = 0;	
+								if (proctab[q[prev].qprev].wait_time > max_write_pointer->wait_time)
+									time_dif = proctab[q[prev].qprev].wait_time - max_write_pointer->wait_time;
+								else
+									time_dif =  max_write_pointer->wait_time - proctab[q[prev].qprev].wait_time;
+								
 								if (time_dif < 1000) 
 								{
-									
 										dequeue(wpid);
-										nptr = &proctab[wpid];
-										assign_lock(lptr,nptr, wpid, WRITE,ld);
+										temp_pointer = &proctab[wpid];
+										assign_lock(lptr,temp_pointer, wpid, WRITE,ld);
 										ready(wpid, RESCHNO);
 								}
 								else
@@ -100,8 +100,8 @@ int releaseall (int numlocks, long args,...)
 									{
 										prev = q[prev].qprev;
 										dequeue(prev);
-										nptr = &proctab[prev];
-										assign_lock(lptr,nptr, prev, READ,ld);
+										temp_pointer = &proctab[prev];
+										assign_lock(lptr,temp_pointer, prev, READ,ld);
 										ready(prev, RESCHNO);
 									}				
 								}
@@ -113,8 +113,8 @@ int releaseall (int numlocks, long args,...)
 								{
 									prev = q[prev].qprev;
 									dequeue(prev);
-									nptr = &proctab[prev];
-									assign_lock(lptr,nptr, prev, READ,ld);
+									temp_pointer = &proctab[prev];
+									assign_lock(lptr,temp_pointer, prev, READ,ld);
 									ready(prev, RESCHNO);
 								}
 							}
@@ -127,8 +127,8 @@ int releaseall (int numlocks, long args,...)
 							{	
 								prev = q[prev].qprev;
 								dequeue(prev);
-								nptr = &proctab[prev];
-								assign_lock(lptr,nptr, prev, READ,ld);
+								temp_pointer = &proctab[prev];
+								assign_lock(lptr,temp_pointer, prev, READ,ld);
 								ready(prev, RESCHNO);
 							}	
 						}
