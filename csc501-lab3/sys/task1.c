@@ -30,33 +30,6 @@ void semaphore3(int s){
 }
 	 
 
-void testsem()
-{
-	int semaphore;
-	int A, B, C;	
-	semaphore = screate(1); 
-	
-	A = create(semaphore1, 2000, 10, "A", 1, semaphore);
-        B = create(semaphore2, 2000, 20, "B", 1, semaphore);
-        C = create(semaphore3, 2000, 30, "C", 1,semaphore);
-	
-	kprintf("Start process A (writer) with priority 10\n");
-        resume(A);
-        sleep (1);
-	kprintf("Priority of A:%d\n", getprio(A));
-
-        kprintf("Start process B (reader) with priority 20\n");
-        resume(B);
-        sleep (1);
-
-        kprintf("Start process C (reader) with priority 30\n");
-        resume (C);
-	sleep (1);
-	kprintf("\n");
-	kprintf("Priority of A:%d\n", getprio(A));
-				
-}
-
 void lock1(int l){
         kprintf("Process A (writer) waiting for lock\n");
         lock (l, WRITE, 10);
@@ -83,9 +56,37 @@ void lock3(int l){
 }
 
 
-
-void testlck()
+int task1()
 {
+	kprintf("\nSemaphore :-\n");
+
+	int semaphore;
+	int S_A, S_B, S_C;	
+	semaphore = screate(1); 
+	
+	S_A = create(semaphore1, 2000, 10, "A", 1, semaphore);
+        S_B = create(semaphore2, 2000, 20, "B", 1, semaphore);
+        S_C = create(semaphore3, 2000, 30, "C", 1,semaphore);
+	
+	kprintf("Start process A (writer) with priority 10\n");
+        resume(S_A);
+        sleep (1);
+	kprintf("Priority of A:%d\n", getprio(S_A));
+
+        kprintf("Start process B (reader) with priority 20\n");
+        resume(S_B);
+        sleep (1);
+
+        kprintf("Start process C (reader) with priority 30\n");
+        resume (S_C);
+	sleep (1);
+	kprintf("\n");
+	kprintf("Priority of A:%d\n", getprio(S_A));
+	kprintf("\nSemahore Complete\n");
+
+
+	kprintf("\nLocks with Priority Inheritence :-\n");
+
 	int ld;
 	int A, B, C;	
 	ld = lcreate(); 
@@ -107,17 +108,8 @@ void testlck()
         resume (C);
 	sleep (1);
 	kprintf("\n");
-	kprintf("Priority of A:%d\n", getprio(A));
-				
-}
 
-int task1()
-{
-	kprintf("\nSemaphore :-\n");
-	testsem();
-	kprintf("\nSemahore Complete\n");
-	kprintf("\nLocks with Priority Inheritence :-\n");
-	testlck();
-	kprintf("\nLocks with Priority Inheritence Compplete\n");
+	kprintf("Priority of A:%d\n", getprio(A));	
+        kprintf("\nLocks with Priority Inheritence Compplete\n");
 	
 }
