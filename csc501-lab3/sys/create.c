@@ -102,11 +102,9 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 	{
 		pptr->bm_locks[i] = 0;
 	}
-	pptr->wait_lockid = -1;
+	pptr->lock_id = -1;
 	pptr->wait_time = 0;
-	pptr->wait_pprio = 0;
 	pptr->wait_ltype = -1;
-	pptr->plockret = OK;
 
 	restore(ps);
 	return(pid);

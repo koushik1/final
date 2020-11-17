@@ -52,8 +52,7 @@ int lock (int ld, int type, int priority)
 				lptr->lproc_list[currpid] = 1;
 
 				pptr->bm_locks[ld] = 1;
-				pptr->wait_lockid = -1; 
-				pptr->wait_pprio = priority; 
+				pptr->lock_id = -1; 
 				pptr->wait_ltype = -1; 
 				rampUpProcPriority (ld,-1);	
 			}
@@ -76,8 +75,7 @@ int lock (int ld, int type, int priority)
 		lptr->lproc_list[currpid] = 1;
 
 		pptr->bm_locks[ld] = 1; 
-		pptr->wait_lockid = -1; 
-		pptr->wait_pprio = priority; 
+		pptr->lock_id = -1; 
 		pptr->wait_ltype = -1; 	
 	}
 	
@@ -135,9 +133,8 @@ int block_process(struct pentry *pptr,int lock_d,int priority,int type,int pid)
     struct lentry *lptr;
     lptr= &locks[lock_d];
     pptr->pstate = PRWAIT;
-    pptr->wait_lockid = lock_d;  
+    pptr->lock_id = lock_d;  
     pptr->wait_time = ctr1000; 
-	pptr->wait_pprio = priority;  
     pptr->wait_ltype = type; 
 
     insert(pid, lptr->lqhead, priority); 
@@ -182,7 +179,7 @@ void rampUpProcPriority (int ld, int priority)
 				else
 					pptr->pinh = 0; 
 				
-				tmpld = proctab[i].wait_lockid;
+				tmpld = proctab[i].lock_id;
 				if ((tmpld >= 0 && tmpld < NLOCKS))
 				{
 					rampUpProcPriority (tmpld,-1);
@@ -192,7 +189,7 @@ void rampUpProcPriority (int ld, int priority)
 			else if (current_prio < priority)
 			{
 				pptr->pinh = priority;
-				tmpld = proctab[i].wait_lockid;
+				tmpld = proctab[i].lock_id;
 				if ((tmpld >= 0 && tmpld < NLOCKS))
 				{
 					rampUpProcPriority (tmpld,-1);

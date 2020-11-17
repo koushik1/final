@@ -67,11 +67,9 @@ struct	pentry	{
 
 	int 	pinh; 	
 	int	bm_locks[NLOCKS]; 
-	int 	wait_lockid;	
+	int 	lock_id;	
 	unsigned long wait_time; 
-	int 	wait_pprio;	
 	int 	wait_ltype;
-	int 	plockret;	 	
 };
 
 

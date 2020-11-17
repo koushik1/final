@@ -33,7 +33,7 @@ SYSCALL chprio(int pid, int newprio)
 		pptr->pinh = 0;
 	}
 
-	ld = pptr->wait_lockid;
+	ld = pptr->lock_id;
 	if ((ld >= 0 && ld < NLOCKS))
 	{
 		lptr = &locks[ld];

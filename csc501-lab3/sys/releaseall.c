@@ -67,7 +67,7 @@ void releaseLDForProc(int pid, int ld)
 	lptr->lproc_list[pid] = 0;
 	
 	pptr->bm_locks[ld] = 0;
-	pptr->wait_lockid = -1;
+	pptr->lock_id = -1;
 	pptr->wait_ltype = -1;
 
 	if (nonempty(lptr->lqhead))
@@ -108,7 +108,7 @@ void releaseLDForProc(int pid, int ld)
  				lptr->ltype = READ;
 				lptr->lproc_list[prev] = 1;
 				nptr->wait_time = 0;
-				nptr->wait_lockid = -1;
+				nptr->lock_id = -1;
 				nptr->wait_ltype = -1;
 
 				ready(prev, RESCHNO);
@@ -145,7 +145,7 @@ void releaseLDForProc(int pid, int ld)
  						lptr->ltype = WRITE;
 						lptr->lproc_list[wpid] = 1;
 						nptr->wait_time = 0;
-						nptr->wait_lockid = -1;
+						nptr->lock_id = -1;
 						nptr->wait_ltype = -1;
 
 						ready(wpid, RESCHNO);
@@ -165,7 +165,7 @@ void releaseLDForProc(int pid, int ld)
  						lptr->ltype = READ;
 						lptr->lproc_list[prev] = 1;
 						nptr->wait_time = 0;
-						nptr->wait_lockid = -1;
+						nptr->lock_id = -1;
 						nptr->wait_ltype = -1;
 
 						ready(prev, RESCHNO);
@@ -186,7 +186,7 @@ void releaseLDForProc(int pid, int ld)
  					lptr->ltype = READ;
 					lptr->lproc_list[prev] = 1;
 					nptr->wait_time = 0;
-					nptr->wait_lockid = -1;
+					nptr->lock_id = -1;
 					nptr->wait_ltype = -1;
 
 					ready(prev, RESCHNO);

@@ -37,7 +37,7 @@ int ldelete (int ld)
         int pid = getfirst(lptr->lqhead);
         while (pid != EMPTY)
         {
-             proctab[pid].wait_lockid = -1;
+             proctab[pid].lock_id = -1;
              ready(pid,RESCHNO);
 
         }

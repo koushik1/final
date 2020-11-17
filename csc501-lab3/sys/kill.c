@@ -51,10 +51,9 @@ SYSCALL kill(int pid)
 			pptr = &proctab[pid];
 
 			dequeue(pid);
-			pptr->wait_lockid = -1;
+			pptr->lock_id = -1;
 			pptr->wait_ltype = -1;
 			pptr->wait_time = 0;
-			pptr->plockret = DELETED;
 
 			temp_lptr->lprio = getMaxPriorityInLockWQ(ld);	
 			rampUpProcPriority(ld,-1);
@@ -68,7 +67,7 @@ SYSCALL kill(int pid)
 			resched();
 
 	case PRWAIT:	semaph[pptr->psem].semcnt++;
-			ld = pptr->wait_lockid;
+			ld = pptr->lock_id;
 			if (ld>=0 || ld<NLOCKS)
 			{
 				pptr->pinh = 0;
@@ -78,10 +77,9 @@ SYSCALL kill(int pid)
 				pptr = &proctab[pid];
 
 				dequeue(pid);
-				pptr->wait_lockid = -1;
+				pptr->lock_id = -1;
 				pptr->wait_ltype = -1;
 				pptr->wait_time = 0;
-				pptr->plockret = DELETED;
 
 				temp_lptr->lprio = getMaxPriorityInLockWQ(ld);	
 				rampUpProcPriority(ld,-1);
