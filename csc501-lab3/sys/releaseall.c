@@ -35,7 +35,7 @@ int releaseall (int numlocks, long lks,...)
 			{
 				struct pentry *nptr;
 				struct pentry *wptr;
-				int readerProcHoldingLock = 1;
+				int lock_current_held = 1;
 				int maxprio = -1;
 				int i=0;
 
@@ -49,19 +49,18 @@ int releaseall (int numlocks, long lks,...)
 				{
 					if (lptr->process_bitmap[i] == 1)
 					{
-						readerProcHoldingLock = 0;
+						lock_current_held = 0;
 						break;
 					}
 				}
 
-				if (readerProcHoldingLock)
+				if (lock_current_held)
 				{
 					if (nonempty(lptr->q_head))
 					{
 						int prev = lptr->q_tail;
-						int writerProcExist = 0;
+						int writer_flag = 0;
 						int wpid = 0;
-						struct qent *mptr;
 						unsigned long tdf = 0;	
 						maxprio = q[q[prev].qprev].qkey;
 						
@@ -71,30 +70,17 @@ int releaseall (int numlocks, long lks,...)
 							wptr = &proctab[prev];
 							if (wptr->waiting_on_type == WRITE)
 							{
-								writerProcExist = 1;
+								writer_flag = 1;
 								wpid = prev;
-								mptr = &q[wpid];
 								break;		
 							}	
 						}
 						
-						if (writerProcExist == 0)
+
+						if (writer_flag)
 						{
 							prev = lptr->q_tail;
-							
-							while (q[prev].qprev != lptr->q_head && q[prev].qprev < NPROC && q[prev].qprev > 0)
-							{	
-								prev = q[prev].qprev;
-								dequeue(prev);
-								nptr = &proctab[prev];
-								assign_lock(lptr,nptr, prev, READ,ld);
-								ready(prev, RESCHNO);
-							}	
-						}
-						else if (writerProcExist == 1)
-						{
-							prev = lptr->q_tail;
-							if (mptr->qkey == maxprio)
+							if (q[wpid].qkey == maxprio)
 							{
 								tdf = proctab[q[prev].qprev].wait_time - wptr->wait_time;
 								if (tdf < 0)
@@ -135,6 +121,19 @@ int releaseall (int numlocks, long lks,...)
 									ready(prev, RESCHNO);
 								}
 							}
+						}
+						else
+						{
+							prev = lptr->q_tail;
+							
+							while (q[prev].qprev != lptr->q_head && q[prev].qprev < NPROC && q[prev].qprev > 0)
+							{	
+								prev = q[prev].qprev;
+								dequeue(prev);
+								nptr = &proctab[prev];
+								assign_lock(lptr,nptr, prev, READ,ld);
+								ready(prev, RESCHNO);
+							}	
 						}
 								
 					}
