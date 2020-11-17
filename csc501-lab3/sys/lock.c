@@ -114,13 +114,9 @@ int max_waiting_process_priority (int ld)
         pptr = &proctab[curr];
         int current_prio = -1;
         if (pptr->pinh == 0)
-        {
             current_prio =  pptr->pprio;
-        }
         else
-        {
             current_prio =  pptr->pinh;
-        }
 
         if (current_prio > max_priority)
             max_priority = current_prio;
@@ -150,6 +146,31 @@ int block_process(struct pentry *pptr,int lock_d,int priority,int type,int pid)
     resched();
     return OK;	
 }
+
+int max_current_process_priority (int pid)
+{
+	int i;
+	int maxprio = -1;
+	struct pentry *pptr;
+	struct lentry *lptr;
+
+	pptr = &proctab[pid];
+	
+	for (i=0;i<NLOCKS;i++)
+	{
+		if (pptr->lock_bitmap[i] == 1)
+		{
+			lptr = &locks[i];
+			if (maxprio < lptr->lprio)
+			{
+				maxprio = lptr->lprio;
+			}
+		}		
+	}
+		
+	return maxprio;
+}
+
 
 void update_process_priority (int ld, int priority)
 {
@@ -199,26 +220,3 @@ void update_process_priority (int ld, int priority)
 
 }
 
-int max_current_process_priority (int pid)
-{
-	int i;
-	int maxprio = -1;
-	struct pentry *pptr;
-	struct lentry *lptr;
-
-	pptr = &proctab[pid];
-	
-	for (i=0;i<NLOCKS;i++)
-	{
-		if (pptr->lock_bitmap[i] == 1)
-		{
-			lptr = &locks[i];
-			if (maxprio < lptr->lprio)
-			{
-				maxprio = lptr->lprio;
-			}
-		}		
-	}
-		
-	return maxprio;
-}

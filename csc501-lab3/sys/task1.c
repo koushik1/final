@@ -1,57 +1,59 @@
 #include <conf.h>
 #include <kernel.h>
 #include <proc.h>
-#include <lock.h>
 #include <stdio.h>
 #include <lock.h>
 
-
-
-void swriter (char *msg, int sem)
-{
-	kprintf ("  %s: to acquire sem\n", msg);
-        wait(sem);
-        kprintf ("  %s: acquired sem, sleep 10s\n", msg);
-	sleep (10);
-        kprintf ("  %s: to release sem\n", msg);
-        signal(sem);	
+void semaphore1(int s){
+        kprintf("Process A (writer) waiting for semaphore\n");
+        int x = wait(s);
+        kprintf("Process A (writer) acquires semaphore\n");
+        sleep(7);
+        kprintf("Process A (writer) signals\n");
+        signal(s);
 }
 
-void sreader (char *msg, int sem)
-{
-	kprintf ("  %s: to acquire sem\n", msg);
-	wait(sem);
-	kprintf ("  %s: acquired sem\n", msg);
-        kprintf ("  %s: to release sem\n", msg);
-	signal(sem);
-}	 
+void semaphore2(int s){
+        kprintf("Process B (reader) waiting for semaphore\n");
+        int x = wait(s);
+        kprintf("Process B (reader) acquires semaphore\n");
+        kprintf("Process B (reader) signals\n");
+        signal(s);
+}
+
+void semaphore3(int s){
+        kprintf("Process C (reader) waiting for semaphore\n");
+        int x = wait(s);
+        kprintf("Process C (reader) acquires semaphore\n");
+        kprintf("Process C (reader) signals\n");
+        signal(s);
+}
+	 
 
 void testsem()
 {
-	int sem;
-	int rd1, rd2;
-	int wr1;
+	int semaphore;
+	int A, B, C;	
+	semaphore = screate(1); 
 	
-	sem = screate(1); /* count = 1 passing for semaphore*/
+	A = create(semaphore1, 2000, 10, "A", 1, semaphore);
+        B = create(semaphore2, 2000, 20, "B", 1, semaphore);
+        C = create(semaphore3, 2000, 30, "C", 1,semaphore);
 	
-	rd1 = create(sreader, 2000, 40, "readerA", 2, "reader A", sem);
-        rd2 = create(sreader, 2000, 30, "readerB", 2, "reader B", sem);
-        wr1 = create(swriter, 2000, 10, "writer", 2, "writer", sem);
-	
-	kprintf("-start writer, then sleep 1s. sem granted to write (prio 10)\n");
-        resume(wr1);
+	kprintf("Start process A (writer) with priority 10\n");
+        resume(A);
         sleep (1);
-	kprintf("Priority of writer:%d\n", getprio(wr1));
+	kprintf("Priority of A:%d\n", getprio(A));
 
-        kprintf("-start reader A, then sleep 1s. reader A(prio 40) blocked on the sem\n");
-        resume(rd1);
+        kprintf("Start process B (reader) with priority 20\n");
+        resume(B);
         sleep (1);
-	kprintf("Priority of writer:%d\n", getprio(wr1));
 
-        kprintf("-start reader B, then sleep 1s. reader B(prio 30) blocked on the sem\n");
-        resume (rd2);
+        kprintf("Start process C (reader) with priority 30\n");
+        resume (C);
 	sleep (1);
-	kprintf("Priority of writer:%d\n", getprio(wr1));
+	kprintf("\n");
+	kprintf("Priority of A:%d\n", getprio(A));
 				
 }		
 

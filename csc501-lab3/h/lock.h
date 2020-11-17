@@ -6,8 +6,6 @@
 #define	NLOCKS		50	
 #endif
 
-#define	LFREE 1	
-#define	LUSED 2	
 
 #ifndef DELETED
 #define DELETED -6
@@ -15,6 +13,9 @@
 
 #define READ 0
 #define WRITE 1
+
+#define	LFREE 1	
+#define	LUSED 2	
 
 struct	lentry	{		
 	char lstate;			

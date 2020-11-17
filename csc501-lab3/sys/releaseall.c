@@ -9,9 +9,9 @@ int releaseall (int numlocks, long args,...)
 {
 
 	STATWORD ps;
+	disable(ps);
 	struct lentry *lptr;
 	struct pentry *pptr;
-	disable(ps);
 	
 	int i;
 	int ld;
