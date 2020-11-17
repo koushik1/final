@@ -5,7 +5,7 @@
 #include <lock.h>
 #include <stdio.h>
 
-int releaseall (int numlocks, long lks,...)
+int releaseall (int numlocks, long args,...)
 {
 
 	STATWORD ps;
@@ -13,39 +13,41 @@ int releaseall (int numlocks, long lks,...)
 	struct pentry *pptr;
 	disable(ps);
 	
-	int i;
 	int ld;
-        unsigned long *a; 
-	int flag = 0;
+    unsigned long *locks; 
+	int error = 0;
 	pptr = &proctab[currpid];
 	
-	a = (unsigned long *)(&lks);
+	locks = (unsigned long *)(&args);
+	int i;
 	for (i=0;i<numlocks;i++)
 	{
-		ld = *a++;
+		ld = *locks++;
 
 		if ((ld<0 || ld>=NLOCKS)) 
 		{
-               		flag = 1;	   	
-       		}
+            restore(ps);
+			return SYSERR;	
+       	}
+
+		lptr = &locks[ld];
+		if (lptr->process_bitmap[currpid] == 1)
+		{
+			releaseLDForProc(currpid, ld);					
+		}
 		else
 		{
-			lptr = &locks[ld];
-			if (lptr->process_bitmap[currpid] == 1)
-			{
-				releaseLDForProc(currpid, ld);					
-			}
-			else
-			{
-				flag = 1;
-			} 
-		}		
+			error = 1;
+		}
+		
 	}
 
-	resched();
 
 	restore(ps);
-	return flag == 0 ? OK : SYSERR;	
+	resched();
+	if (!error)
+		return OK;
+	return SYSERR;	
 }
 
 void releaseLDForProc(int pid, int ld)
@@ -56,7 +58,6 @@ void releaseLDForProc(int pid, int ld)
 	struct pentry *nptr;
 	struct pentry *wptr;
 	
-	int oltype = lptr->ltype;
 	int maxprio = -1;
 	int i=0;
 
@@ -69,6 +70,8 @@ void releaseLDForProc(int pid, int ld)
 	pptr->lock_bitmap[ld] = 0;
 	pptr->lock_id = -1;
 	pptr->waiting_on_type = -1;
+
+
 
 	if (nonempty(lptr->q_head))
 	{
@@ -101,16 +104,8 @@ void releaseLDForProc(int pid, int ld)
 			{	
 				prev = q[prev].qprev;
 				dequeue(prev);
-
 				nptr = &proctab[prev];
-				nptr->lock_bitmap[ld] = 1;
-
- 				lptr->ltype = READ;
-				lptr->process_bitmap[prev] = 1;
-				nptr->wait_time = 0;
-				nptr->lock_id = -1;
-				nptr->waiting_on_type = -1;
-
+				assign_lock(lptr,nptr, prev, READ,ld);
 				ready(prev, RESCHNO);
 			}	
 		}
@@ -140,14 +135,7 @@ void releaseLDForProc(int pid, int ld)
 						dequeue(wpid);
 	
 						nptr = &proctab[wpid];
-						nptr->lock_bitmap[ld] = 1;
-	
- 						lptr->ltype = WRITE;
-						lptr->process_bitmap[wpid] = 1;
-						nptr->wait_time = 0;
-						nptr->lock_id = -1;
-						nptr->waiting_on_type = -1;
-
+				        assign_lock(lptr,nptr, wpid, WRITE,ld);
 						ready(wpid, RESCHNO);
 					}
 				}
@@ -158,16 +146,8 @@ void releaseLDForProc(int pid, int ld)
 					{
 						prev = q[prev].qprev;
 						dequeue(prev);
-
 						nptr = &proctab[prev];
-						nptr->lock_bitmap[ld] = 1;
-
- 						lptr->ltype = READ;
-						lptr->process_bitmap[prev] = 1;
-						nptr->wait_time = 0;
-						nptr->lock_id = -1;
-						nptr->waiting_on_type = -1;
-
+				        assign_lock(lptr,nptr, prev, READ,ld);
 						ready(prev, RESCHNO);
 					}				
 				}
@@ -179,35 +159,31 @@ void releaseLDForProc(int pid, int ld)
 				{
 					prev = q[prev].qprev;
 					dequeue(prev);
-
 					nptr = &proctab[prev];
-					nptr->lock_bitmap[ld] = 1;
-
- 					lptr->ltype = READ;
-					lptr->process_bitmap[prev] = 1;
-					nptr->wait_time = 0;
-					nptr->lock_id = -1;
-					nptr->waiting_on_type = -1;
-
+			        assign_lock(lptr,nptr, prev, READ,ld);
 					ready(prev, RESCHNO);
 				}
 			}
 		}
 				
 	}
-		
 	lptr->lprio = max_waiting_process_priority(ld);
 	maxprio = max_current_process_priority(pid);
 	
 	if (maxprio > pptr->pprio)
-	{
 		pptr->pinh = maxprio;
-	}
 	else
-	{
 		pptr->pinh = 0; 
-	}
-	
-			
+		
+				
 }
 
+void assign_lock(struct lentry *lptr,struct pentry *pptr, int pid, int type,int ld)
+{
+	pptr->lock_bitmap[ld] = 1;
+	pptr->wait_time = 0;
+	pptr->lock_id = -1;
+	pptr->waiting_on_type = -1;
+	lptr->ltype = type;
+	lptr->process_bitmap[pid] = 1;
+}

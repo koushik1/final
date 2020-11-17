@@ -134,8 +134,8 @@ int block_process(struct pentry *pptr,int lock_d,int priority,int type,int pid)
     lptr= &locks[lock_d];
     pptr->pstate = PRWAIT;
     pptr->lock_id = lock_d;  
-    pptr->wait_time = ctr1000; 
     pptr->waiting_on_type = type; 
+    pptr->wait_time = ctr1000; 
 
     insert(pid, lptr->q_head, priority); 
     lptr->lprio = max_waiting_process_priority(lock_d); 
@@ -156,7 +156,6 @@ void update_process_priority (int ld, int priority)
 	struct lentry *lptr;
 	struct pentry *pptr;
 	int i;
-	int tmpld;
 	lptr = &locks[ld];
 
 	for (i=0;i<NPROC;i++)
@@ -179,20 +178,20 @@ void update_process_priority (int ld, int priority)
 				else
 					pptr->pinh = 0; 
 				
-				tmpld = proctab[i].lock_id;
-				if ((tmpld >= 0 && tmpld < NLOCKS))
+				int new_process_ld = proctab[i].lock_id;
+				if ((new_process_ld >= 0 && new_process_ld < NLOCKS))
 				{
-					update_process_priority (tmpld,-1);
+					update_process_priority (new_process_ld,-1);
 				}			 
 			}
 			
 			else if (current_prio < priority)
 			{
 				pptr->pinh = priority;
-				tmpld = proctab[i].lock_id;
-				if ((tmpld >= 0 && tmpld < NLOCKS))
+				int new_process_ld  = proctab[i].lock_id;
+				if ((new_process_ld >= 0 && new_process_ld < NLOCKS))
 				{
-					update_process_priority (tmpld,-1);
+					update_process_priority (new_process_ld,-1);
 				}			 
 			}	
 		}

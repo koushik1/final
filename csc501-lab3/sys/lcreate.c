@@ -12,7 +12,7 @@ int lcreate()
 	STATWORD ps;    
 	disable(ps);
 
-	int	lock_desc;
+	int	ld;
     int i;
     for (i = 0; i < NLOCKS; i++)
     {
@@ -20,12 +20,12 @@ int lcreate()
         {
             lock_index = 0;
         }
-        lock_desc = lock_index;
+        ld = lock_index;
         lock_index = lock_index + 1;
-		if (locks[lock_desc].lstate==LFREE) {
-			locks[lock_desc].lstate = LUSED;
+		if (locks[ld].lstate==LFREE) {
+			locks[ld].lstate = LUSED;
             restore(ps);
-			return(lock_desc);
+			return(ld);
 		}
 
     }
