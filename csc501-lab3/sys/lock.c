@@ -27,19 +27,8 @@ int lock (int ld, int type, int priority)
 	}
 	
 
-	if (lptr->ltype == DELETED)
-	{
-		lptr->ltype = type;
-		lptr->lprio = -1;
-		lptr->lproc_list[currpid] = 1;
-
-		pptr->bm_locks[ld] = 1; 
-		pptr->wait_lockid = -1; 
-		pptr->wait_pprio = priority; 
-		pptr->wait_ltype = -1; 	
-	}
 	
-	else if (lptr->ltype == READ)
+	if (lptr->ltype == READ)
 	{
 		if (type == WRITE)
 		{
@@ -91,39 +80,49 @@ int lock (int ld, int type, int priority)
 		return block_process(pptr,ld,priority,type,currpid);
 		
 	}
+
+	else
+	{
+		lptr->ltype = type;
+		lptr->lprio = -1;
+		lptr->lproc_list[currpid] = 1;
+
+		pptr->bm_locks[ld] = 1; 
+		pptr->wait_lockid = -1; 
+		pptr->wait_pprio = priority; 
+		pptr->wait_ltype = -1; 	
+	}
 	
 	restore(ps);
 	return(OK); 
 }
 
+
 int getMaxPriorityInLockWQ (int ld)
 {
-	struct lentry *lptr;
-	struct pentry *pptr;
+    struct lentry *lptr;
+    lptr = &locks[ld];
+    struct pentry *pptr ;
 
-	int lprio = -1;
-	int gprio = -1;	
-	lptr = &locks[ld];
-	
-	int next = lptr->lqhead;
-	while (q[next].qnext != lptr->lqtail)
-	{
-		next = q[next].qnext;
-		pptr = &proctab[next];
+    int curr ;
+    int max_priority = -1;
+    for(curr = q[lptr->lqhead].qnext; curr!=lptr->lqtail; curr = q[curr].qnext)
+    {
+        pptr = &proctab[curr];
+        int current_prio = -1;
+        if (pptr->pinh == 0)
+        {
+            current_prio =  pptr->pprio;
+        }
+        else
+        {
+            current_prio =  pptr->pinh;
+        }
 
-		if (pptr->pinh == 0)
-			gprio =  pptr->pprio;
-		else
-			gprio =  pptr->pinh;
-
-
-		if (lprio < gprio)
-		{
-			lprio = gprio;
-		} 		
-	}
-
-	return lprio;				
+        if (current_prio > max_priority)
+            max_priority = current_prio;
+    }
+    return max_priority;			
 }
 
 int block_process(struct pentry *pptr,int lock_d,int priority,int type,int pid)
