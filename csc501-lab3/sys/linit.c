@@ -21,7 +21,7 @@ void linit()
         lptr->lqhead = newqueue();
         lptr->lqtail = 1 + lptr->lqhead;
 	    lptr->lprio  = -1;	
-
+		lptr->ltype = DELETED;
         int j=0;
         while(j<NPROC)
         {
@@ -30,5 +30,4 @@ void linit()
         }
         i++;
     }
-
 }
