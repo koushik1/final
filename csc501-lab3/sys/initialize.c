@@ -33,7 +33,6 @@ struct	pentry	proctab[NPROC]; /* process table			*/
 int	nextproc;		/* next process slot to use in create	*/
 struct	sentry	semaph[NSEM];	/* semaphore table			*/
 int	nextsem;		/* next sempahore slot to use in screate*/
-int 	nextlock;		
 struct	qent	q[NQENT];	/* q table (see queue.c)		*/
 int	nextqueue;		/* next slot in q structure to use	*/
 char	*maxaddr;		/* max memory address (set by sizmem)	*/
@@ -179,7 +178,7 @@ LOCAL int sysinit()
 		sptr->sqtail = 1 + (sptr->sqhead = newqueue());
 	}
 	
-	linit(); /* initialize lock descriptors */
+	linit(); 
 	
 	rdytail = 1 + (rdyhead=newqueue());/* initialize ready list */
 

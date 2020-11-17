@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 struct  lentry  locks[NLOCKS];
+int 	nextlock;		
 
 void linit()
 {

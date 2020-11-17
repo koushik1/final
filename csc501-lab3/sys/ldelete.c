@@ -5,10 +5,7 @@
 #include <lock.h>
 #include <stdio.h>
 
-/*------------------------------------------------------------------------
- * ldelete  --  delete a lock by releasing its table entry
- *------------------------------------------------------------------------
- */
+
 int ldelete (int ld)
 {
 
