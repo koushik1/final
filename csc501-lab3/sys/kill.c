@@ -19,7 +19,6 @@ SYSCALL kill(int pid)
 	struct	pentry	*pptr;		/* points to proc. table for pid*/
 	int	dev;
 	int ld;
-	struct lentry *lptr;
 	int reschflag = 0;
 	disable(ps);
 	if (isbadpid(pid) || (pptr= &proctab[pid])->pstate==PRFREE) {
@@ -75,8 +74,21 @@ SYSCALL kill(int pid)
 			if (ld>=0 || ld<NLOCKS)
 			{
 				pptr->pinh = 0;
-				releaseLDForWaitProc(pid,ld);
-			}
+				struct lentry *temp_lp;
+				struct pentry *temp_pp;
+				
+				temp_lp = &locks[ld];
+				temp_pp = &proctab[pid];
+
+				temp_pp->wait_lockid = -1;
+				temp_pp->wait_ltype = -1;
+				temp_pp->wait_time = 0;
+				temp_pp->plockret = DELETED;
+
+				temp_lp->lprio = getMaxPriorityInLockWQ(ld);	
+				rampUpProcPriority(ld,-1);
+				dequeue(pid);		
+				}
 
 	case PRREADY:	dequeue(pid);
 			pptr->pstate = PRFREE;
