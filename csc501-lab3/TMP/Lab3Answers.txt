@@ -1,0 +1,65 @@
+1) The priority inversion problem could cause that a higher-priority process needs to wait for the completion of a lower-priority process.
+Priority inheritance is one approach to address this issue. Please give another approach and briefly describe its idea.
+
+Answer
+
+Another approach to the priority inversion problem  is the priority ceiling approach. It is a dynamic priority scheduling approach in which
+every resouce is assigned a ceiling priority which is the highest priority of the process which can lock the resource. It tackles the priority
+inversion problem by dynamically increasing the priority of the process holding the lock. THis ensures that the priority of the process 
+holding the lock remains higher.
+
+2) Design a test case to show that your approach can address the priority inversion problem. You should compare the results that derived from the original XINU implementation (use semaphore) and that derived from your implementation (use readers/writer locks). Put your results in Lab3Answers.txt and your test case program (name it task1.c) in both ./sys and ./TMP
+
+Answer
+
+Output of test:
+
+        Semaphore :-
+        Start process A (writer) with priority 10
+        Process A (writer) waiting for semaphore
+        Process A (writer) acquires semaphore
+        Priority of A:10
+        Start process B (reader) with priority 20
+        Process B (reader) waiting for semaphore
+        Start process C (reader) with priority 30
+        Process C (reader) waiting for semaphore
+
+        Priority of A:10
+
+        Semahore Complete
+
+        Locks with Priority Inheritence :-
+        Start process A (writer) with priority 10
+        Process A (writer) waiting for lock
+        Process A (writer) acquires lock
+        Priority of A:10
+        Start process B (reader) with priority 20
+        Process B (reader) waiting for lock
+        Start process C (reader) with priority 30
+        Process C (reader) waiting for lock
+
+        Priority of A:30
+
+        Locks with Priority Inheritence Compplete
+
+
+We can see that in case of the semaphore approach the priority of the process holding the lock remains 10 even though we have a process
+of higher priorities waiting on the lock. In the Priority Inheritence approach the process A inherits the priority of the highest waiting 
+waiting process C.
+
+Synchronization is a quite complex issue in operating systems. To show your understanding about process synchronization, you are asked to point out a reader/writer synchronization issue in this pesudo-code: task2_sync_issue.c. 
+Multiple reader threads can execute this code concurrently by calling do_update. All the variables starting with global_ are global variables. You are asked to describe the potential issue caused by the 
+incorrect synchronization and point out at least one possible thread interleaving that would trigger the problem. Put your answer in Lab3Answers.txt mentioned above.
+
+Answer
+
+The problem in the given code is that, the locks to perform write operations are not exclusive. In the do_update function it will allow 
+multiple readers to go into the try_update funtion and write to the global buffer. So if  readers are inturrupted then we cannot guarantee
+the order of execution of multiple readers.
+
+One possible interleaving is - 
+
+Reader 1 acqurres the lock in do_update and enters try_update and calculates its time t1, but before updating the buffer, it gets interrupted
+Reader 2 then acquires the lock in do_update and enters try_update and calculates its time t2, and adds it time t2 to the buffer. After reader 2 
+finishes, reader 1 in restarted and now it adds time t1 after t2 which is not the expected order of output in when readers came in.
+
