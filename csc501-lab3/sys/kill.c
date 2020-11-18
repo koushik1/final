@@ -65,6 +65,23 @@ SYSCALL kill(int pid)
 			resched();
 
 	case PRWAIT:	semaph[pptr->psem].semcnt++;
+					ld = pptr->lock_id;
+					if (ld>=0 || ld<NLOCKS)
+					{
+						pptr->pinh = 0;
+						struct lentry *temp_lptr;
+						
+						temp_lptr = &locks[ld];
+						pptr = &proctab[pid];
+
+						dequeue(pid);
+						pptr->lock_id = -1;
+						pptr->waiting_on_type = -1;
+						pptr->wait_time = 0;
+
+						temp_lptr->lprio = max_waiting_process_priority(ld);	
+						update_process_priority(ld,-1);
+					}
 
 	case PRREADY:	dequeue(pid);
 			pptr->pstate = PRFREE;
