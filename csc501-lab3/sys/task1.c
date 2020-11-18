@@ -48,10 +48,10 @@ void lock2(int l){
 }
 
 void lock3(int l){
-        kprintf("Process B (reader) waiting for lock\n");
+        kprintf("Process C (reader) waiting for lock\n");
         lock (l, READ, 10);
-        kprintf("Process B (reader) acquires lock\n");
-        kprintf("Process B (reader) releases lock\n");
+        kprintf("Process C (reader) acquires lock\n");
+        kprintf("Process C (reader) releases lock\n");
         releaseall (1, l);
 }
 

@@ -98,13 +98,11 @@ SYSCALL create(procaddr,ssize,priority,name,nargs,args)
 	*pushsp = pptr->pesp = (unsigned long)saddr;
 	
 	pptr->pinh = 0;
-	for (i=0;i<NLOCKS;i++)
-	{
-		pptr->lock_bitmap[i] = 0;
-	}
 	pptr->lock_id = -1;
 	pptr->wait_time = 0;
 	pptr->waiting_on_type = -1;
+	for (i=0;i<NLOCKS;i++)
+		pptr->lock_bitmap[i] = 0;
 
 	restore(ps);
 	return(pid);

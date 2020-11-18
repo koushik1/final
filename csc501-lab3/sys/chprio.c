@@ -24,9 +24,7 @@ SYSCALL chprio(int pid, int newprio)
 		return(SYSERR);
 	}
 	if (newprio > pptr->pprio)
-	{
 		pptr->pinh = newprio;
-	}
 	else
 	{
 		pptr->pprio = newprio;
@@ -34,12 +32,9 @@ SYSCALL chprio(int pid, int newprio)
 	}
 
 	ld = pptr->lock_id;
-	if ((ld >= 0 && ld < NLOCKS))
-	{
-		lptr = &locks[ld];
-		lptr->lprio = max_waiting_process_priority(ld);
-		update_process_priority(ld,-1);	
-	} 
+	lptr = &locks[ld];
+	lptr->lprio = max_waiting_process_priority(ld);
+	update_process_priority(ld,-1);	
 	restore(ps);
 	return(newprio);
 }

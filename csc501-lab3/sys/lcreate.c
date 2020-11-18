@@ -5,7 +5,6 @@
 #include <lock.h>
 #include <stdio.h>
 
-LOCAL int newlock();
 
 int lcreate()
 {
