@@ -19,7 +19,6 @@ SYSCALL kill(int pid)
 	struct	pentry	*pptr;		/* points to proc. table for pid*/
 	int	dev;
 	int ld;
-	int reschflag = 0;
 	disable(ps);
 	if (isbadpid(pid) || (pptr= &proctab[pid])->pstate==PRFREE) {
 		restore(ps);
@@ -57,7 +56,6 @@ SYSCALL kill(int pid)
 
 			temp_lptr->lprio = max_waiting_process_priority(ld);	
 			update_process_priority(ld,-1);
-			reschflag = 1;
 		}
 	}
 		
@@ -94,11 +92,6 @@ SYSCALL kill(int pid)
 						/* fall through	*/
 	default:	pptr->pstate = PRFREE;
 	}
-
-	if (reschflag == 1)
-	{
-		resched();
-	}	
 	
 	restore(ps);
 	return(OK);
