@@ -16,9 +16,7 @@ int lcreate()
     for (i = 0; i < NLOCKS; i++)
     {
         if (lock_index == NLOCKS)
-        {
             lock_index = 0;
-        }
         ld = lock_index;
         lock_index = lock_index + 1;
 		if (locks[ld].lstate==LFREE) {

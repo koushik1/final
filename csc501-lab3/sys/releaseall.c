@@ -16,7 +16,7 @@ int releaseall (int numlocks, long args,...)
 	int i;
 	int ld;
     unsigned long *lock; 
-	int flag = 0;
+	int is_lock_valid = 0;
 	pptr = &proctab[currpid];
 	
 	lock = (unsigned long *)(&args);
@@ -25,9 +25,7 @@ int releaseall (int numlocks, long args,...)
 		ld = *lock++;
 
 		if ((ld<0 || ld>=NLOCKS)) 
-		{
-               		flag = 1;	   	
-       		}
+            is_lock_valid = 1;	   	
 		else
 		{
 			lptr = &locks[ld];
@@ -36,12 +34,18 @@ int releaseall (int numlocks, long args,...)
 				int lock_current_held = 1;
 				int i=0;
 
-				lptr->ltype = DELETED;
 				lptr->process_bitmap[currpid] = 0;
-				
+				lptr->ltype = DELETED;
 				pptr->lock_bitmap[ld] = 0;
 				pptr->lock_id = -1;
 				pptr->waiting_on_type = -1;
+				int max_priority = max_current_process_priority(currpid);
+				
+				if (max_priority > pptr->pprio)
+					pptr->pinh = max_priority;
+				else
+					pptr->pinh = 0; 
+					
 				for (i = 0;i < NPROC;i++)
 				{
 					if (lptr->process_bitmap[i] == 1)
@@ -136,22 +140,12 @@ int releaseall (int numlocks, long args,...)
 					}
 				}
 					
-				lptr->lprio = max_waiting_process_priority(ld);
-				int max_priority = max_current_process_priority(currpid);
-				
-				if (max_priority > pptr->pprio)
-				{
-					pptr->pinh = max_priority;
-				}
-				else
-				{
-					pptr->pinh = 0; 
-				}			
+				lptr->lprio = max_waiting_process_priority(ld);			
 			}
 
 			else
 			{
-				flag = 1;
+				is_lock_valid = 1;
 			} 
 		}		
 	}
@@ -159,7 +153,9 @@ int releaseall (int numlocks, long args,...)
 	resched();
 
 	restore(ps);
-	return flag == 0 ? OK : SYSERR;	
+	if(is_lock_valid)
+		return SYSERR;
+	return OK;
 }
 
 void assign_lock(struct lentry *lptr,struct pentry *pptr, int pid, int type,int ld)
